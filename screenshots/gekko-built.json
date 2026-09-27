@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8081/gekko",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Gekko.cash coins · MemecoinDev",
+      "hasCanvas": false,
+      "bodyTextLen": 1207,
+      "bodyTextHash": "0c8917b5910e7f58295eea076ae618d76e25ec0f61a8c04c67e2ab8888a19cbe",
+      "bodyTextPrefix": "MEMECOINDEV Mark · Georgia Email Home Pump.fun Gekko.cash ROBINH",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/gekko-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Gekko.cash coins · MemecoinDev",
+      "hasCanvas": false,
+      "bodyTextLen": 1192,
+      "bodyTextHash": "4ae4dc2a753c0ca021383cfa7721cbdaf59d8a2f29aa61fb110caafed494eee3",
+      "bodyTextPrefix": "MEMECOINDEV Email Home Pump.fun Gekko.cash ROBINHOOD CHAIN Gekko",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/gekko-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/gekko-built.json"
+}
