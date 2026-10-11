@@ -8,6 +8,7 @@ const nav = [
   { to: "/", label: "Home" },
   { to: "/pump", label: "Pump.fun" },
   { to: "/gekko", label: "Gekko.cash" },
+  { to: "/members", label: "Members" },
 ] as const;
 
 export function Shell({ children }: { children: ReactNode }) {

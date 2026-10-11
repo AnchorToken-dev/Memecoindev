@@ -12,6 +12,9 @@
   --color-gold-ink: #1a1406;
   --color-copper: #c45c26;
   --color-line: #3a342b;
+  --color-silver: #d4d8de;
+  --color-neon: #39ff88;
+  --color-teal: #2dd4bf;
 }
 
 @layer base {
