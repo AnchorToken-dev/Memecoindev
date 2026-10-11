@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   ArrowUpRight,
+  BellRing,
   BookOpen,
   CandlestickChart,
   Eye,
@@ -494,9 +495,29 @@ function Dashboard({ state }: { state: Extract<MembersState, { status: "holder" 
           Coins I'm watching before launch will show up here first, with the CA and my notes.
           Nothing listed yet.
         </Card>
-        <Card icon={BookOpen} kicker="Coming soon" title="Trade journal">
-          My notes on what worked, what didn't, and why. Lessons, not calls.
-        </Card>
+        <a
+          href={`${ANCHOR_DESK_URL}/alerts`}
+          className="block border border-teal/60 bg-surface p-5 hover:border-neon"
+        >
+          <CardHead icon={BellRing} kicker="Holder tool" title="Wallet watch alerts" />
+          <p className="mt-3 text-muted">
+            Watch coins and dev wallets. Get flagged when a dev dumps, liquidity gets pulled,
+            mint or freeze authority comes back, or the grade drops. In the desk, plus optional
+            Discord.
+          </p>
+          <p className="mt-4 text-sm font-semibold text-teal">Open alerts →</p>
+        </a>
+        <a
+          href={`${ANCHOR_DESK_URL}/journal`}
+          className="block border border-teal/60 bg-surface p-5 hover:border-neon"
+        >
+          <CardHead icon={BookOpen} kicker="Holder tool" title="Trade journal" />
+          <p className="mt-3 text-muted">
+            Every desk trade logged and checked on-chain: P&amp;L, win rate, hold time, notes and
+            tags. Paper trades kept separate. CSV export.
+          </p>
+          <p className="mt-4 text-sm font-semibold text-teal">Open journal →</p>
+        </a>
         <Card icon={Sparkles} kicker="Early access" title="Try things first">
           New tools and Rug Check features land here before they go public. You'll see them in this
           section first.
