@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GekkoRouteImport } from './routes/gekko'
+import { Route as MembersRouteImport } from './routes/members'
 import { Route as PumpRouteImport } from './routes/pump'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const GekkoRoute = GekkoRouteImport.update({
   path: '/gekko',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MembersRoute = MembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PumpRoute = PumpRouteImport.update({
   id: '/pump',
   path: '/pump',
@@ -32,30 +38,34 @@ const PumpRoute = PumpRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/gekko': typeof GekkoRoute
+  '/members': typeof MembersRoute
   '/pump': typeof PumpRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/gekko': typeof GekkoRoute
+  '/members': typeof MembersRoute
   '/pump': typeof PumpRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/gekko': typeof GekkoRoute
+  '/members': typeof MembersRoute
   '/pump': typeof PumpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/gekko' | '/pump'
+  fullPaths: '/' | '/gekko' | '/members' | '/pump'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/gekko' | '/pump'
-  id: '__root__' | '/' | '/gekko' | '/pump'
+  to: '/' | '/gekko' | '/members' | '/pump'
+  id: '__root__' | '/' | '/gekko' | '/members' | '/pump'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GekkoRoute: typeof GekkoRoute
+  MembersRoute: typeof MembersRoute
   PumpRoute: typeof PumpRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GekkoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/members': {
+      id: '/members'
+      path: '/members'
+      fullPath: '/members'
+      preLoaderRoute: typeof MembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pump': {
       id: '/pump'
       path: '/pump'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GekkoRoute: GekkoRoute,
+  MembersRoute: MembersRoute,
   PumpRoute: PumpRoute,
 }
 export const routeTree = rootRouteImport
