@@ -31,7 +31,7 @@ export function Shell({ children }: { children: ReactNode }) {
               Email
             </a>
           </div>
-          <nav className="flex gap-2" aria-label="Pages">
+          <nav className="flex flex-wrap gap-2" aria-label="Pages">
             {nav.map((item) => (
               <Link
                 key={item.to}
@@ -49,6 +49,12 @@ export function Shell({ children }: { children: ReactNode }) {
                 {item.label}
               </Link>
             ))}
+            <a
+              href="https://rugcheck.memecoindev.vip"
+              className="inline-flex min-h-11 items-center whitespace-nowrap border border-line bg-surface px-4 text-sm font-semibold text-fg hover:border-gold"
+            >
+              Rug Check
+            </a>
           </nav>
         </div>
       </header>
