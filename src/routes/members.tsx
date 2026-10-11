@@ -3,6 +3,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import {
   ArrowUpRight,
   BookOpen,
+  CandlestickChart,
   Eye,
   KeyRound,
   LogOut,
@@ -32,6 +33,8 @@ import {
   walletBrowseLinks,
   type WalletLink,
 } from "@/lib/members/mobile-wallets";
+
+const ANCHOR_DESK_URL = "https://desk.memecoindev.vip";
 
 export const Route = createFileRoute("/members")({
   loader: () => getMembersState(),
@@ -469,6 +472,16 @@ function Dashboard({ state }: { state: Extract<MembersState, { status: "holder" 
       </section>
 
       <div className="grid gap-4 md:grid-cols-2">
+        <a
+          href={ANCHOR_DESK_URL}
+          className="block border border-teal/60 bg-surface p-5 hover:border-neon md:col-span-2"
+        >
+          <CardHead icon={CandlestickChart} kicker="Holder tool" title="Anchor Desk" />
+          <p className="mt-3 text-muted">
+            Holder trading desk: graded coin lists, paper mode, limit orders. You sign every trade.
+          </p>
+          <p className="mt-4 text-sm font-semibold text-teal">desk.memecoindev.vip →</p>
+        </a>
         <Card icon={Eye} kicker="Members" title="Launch watchlist">
           Coins I'm watching before launch will show up here first, with the CA and my notes.
           Nothing listed yet.
