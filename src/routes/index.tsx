@@ -75,6 +75,25 @@ function Home() {
       <TelegramCallout />
 
       <section>
+        <SectionTitle kicker="Free tool" title="Check a coin before you trust it">
+          Same reason I build coins: I am sick of people getting rugged.
+        </SectionTitle>
+        <a
+          href="https://rugcheck.memecoindev.vip"
+          className="mt-6 block border border-line bg-surface p-5 hover:border-gold"
+        >
+          <p className="text-xs font-semibold tracking-widest text-gold uppercase">
+            Solana · Robinhood chain
+          </p>
+          <h3 className="mt-2 font-display text-4xl tracking-wide">Rug Check</h3>
+          <p className="mt-3 max-w-xl text-muted">
+            Paste a CA, get an A–F risk grade. Free, no wallet needed.
+          </p>
+          <p className="mt-4 text-sm font-semibold text-gold">rugcheck.memecoindev.vip →</p>
+        </a>
+      </section>
+
+      <section>
         <SectionTitle kicker="The rules" title="How these coins are launched">
           No hidden bag. If I buy, it is a public on-chain buy after the coin is live.
         </SectionTitle>

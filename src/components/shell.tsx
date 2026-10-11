@@ -49,6 +49,12 @@ export function Shell({ children }: { children: ReactNode }) {
                 {item.label}
               </Link>
             ))}
+            <a
+              href="https://rugcheck.memecoindev.vip"
+              className="inline-flex min-h-11 items-center border border-line bg-surface px-4 text-sm font-semibold text-fg hover:border-gold"
+            >
+              Rug Check
+            </a>
           </nav>
         </div>
       </header>
