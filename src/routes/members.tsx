@@ -187,7 +187,7 @@ function PriceNote({ state }: { state: MembersState }) {
     <p className="text-xs text-muted">
       {state.priceFallback
         ? `The live $ANCHOR price isn't available right now, so the fixed ${fmt(state.minBalance)} $ANCHOR minimum applies.`
-        : "Token amount uses the higher of the current $ANCHOR price and its price 24 hours ago (DexScreener), refreshed about every 5 minutes, so short dips don't raise the bar."}
+        : "Token amount uses the higher of the current $ANCHOR price and its price 24 hours ago (DexScreener or GeckoTerminal), refreshed about every 5 minutes, so short dips don't raise the bar."}
     </p>
   );
 }
