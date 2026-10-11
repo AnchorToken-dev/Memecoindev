@@ -3,3 +3,6 @@ node_modules/
 .github_repo
 .env
 .env.*
+
+# Built by Vercel from source; a committed copy makes Vercel serve stale output
+.vercel/output/
