@@ -42,6 +42,16 @@ export const Route = createFileRoute("/members")({
 });
 
 const fmt = (n: number) => n.toLocaleString("en-US");
+const usd = (n: number) =>
+  n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: n % 1 ? 2 : 0 });
+
+/** "$5 of $ANCHOR (about 1,162,791 tokens)" or "500,000 $ANCHOR". */
+function requirementText(state: MembersState) {
+  if (state.minUsd !== undefined && !state.priceFallback) {
+    return `${usd(state.minUsd)} of $ANCHOR (about ${fmt(state.minBalance)} tokens)`;
+  }
+  return `${fmt(state.minBalance)} $ANCHOR`;
+}
 
 function MembersPage() {
   const state = Route.useLoaderData();
@@ -86,8 +96,8 @@ function Gate({ state }: { state: Exclude<MembersState, { status: "holder" }> })
         <h1 className="mt-2 font-display text-5xl tracking-wide text-silver">Members</h1>
         <p className="mt-3 text-muted">
           A members area for people who hold $ANCHOR. Connect a Solana wallet holding at least{" "}
-          <strong className="text-fg">{fmt(state.minBalance)} $ANCHOR</strong> and sign one
-          message to get in.
+          <strong className="text-fg">{requirementText(state)}</strong> and sign one message to
+          get in.
         </p>
       </div>
 
@@ -116,21 +126,33 @@ function Gate({ state }: { state: Exclude<MembersState, { status: "holder" }> })
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div className="border border-line bg-surface-2 p-3">
               <dt className="text-muted">Needed</dt>
-              <dd className="mt-1 font-display text-2xl tracking-wide text-neon">
-                {fmt(state.minBalance)}
-              </dd>
-              <dd className="text-muted">$ANCHOR</dd>
+              {state.minUsd !== undefined && !state.priceFallback ? (
+                <>
+                  <dd className="mt-1 font-display text-2xl tracking-wide text-neon">
+                    {usd(state.minUsd)}
+                  </dd>
+                  <dd className="text-muted">≈ {fmt(state.minBalance)} $ANCHOR</dd>
+                </>
+              ) : (
+                <>
+                  <dd className="mt-1 font-display text-2xl tracking-wide text-neon">
+                    {fmt(state.minBalance)}
+                  </dd>
+                  <dd className="text-muted">$ANCHOR</dd>
+                </>
+              )}
             </div>
             <div className="border border-line bg-surface-2 p-3">
               <dt className="text-muted">Checked</dt>
               <dd className="mt-1 text-fg">On-chain, at sign-in and while you're signed in</dd>
             </div>
           </dl>
+          <PriceNote state={state} />
 
           {state.status === "not_holder" ? (
             <p className="border border-copper bg-copper/10 px-4 py-3 text-sm text-fg" role="status">
               Wallet {shortAddress(state.address)} holds {state.balance} $ANCHOR. Members access
-              needs {fmt(state.minBalance)}. You can connect a different wallet below.
+              needs {requirementText(state)}. You can connect a different wallet below.
             </p>
           ) : null}
 
@@ -156,6 +178,17 @@ function Gate({ state }: { state: Exclude<MembersState, { status: "holder" }> })
         </section>
       </div>
     </>
+  );
+}
+
+function PriceNote({ state }: { state: MembersState }) {
+  if (state.minUsd === undefined) return null;
+  return (
+    <p className="text-xs text-muted">
+      {state.priceFallback
+        ? `The live $ANCHOR price isn't available right now, so the fixed ${fmt(state.minBalance)} $ANCHOR minimum applies.`
+        : "Token amount uses the higher of the current $ANCHOR price and its price 24 hours ago (DexScreener), refreshed about every 5 minutes, so short dips don't raise the bar."}
+    </p>
   );
 }
 
@@ -214,7 +247,7 @@ function WalletSignIn() {
       if (result.status === "error") throw new Error(result.error);
       if (result.status === "not_holder") {
         setNotice(
-          `Wallet ${shortAddress(result.address)} holds ${result.balance} $ANCHOR. Members access needs ${fmt(result.minBalance)}. You can try a different wallet.`,
+          `Wallet ${shortAddress(result.address)} holds ${result.balance} $ANCHOR. Members access needs ${requirementText(result)}. You can try a different wallet.`,
         );
         return;
       }
@@ -318,7 +351,7 @@ function Dashboard({ state }: { state: Extract<MembersState, { status: "holder" 
         </div>
         <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-3">
           <Stat label="Wallet holds" value={`${state.balance} $ANCHOR`} accent />
-          <Stat label="Access needs" value={`${fmt(state.minBalance)} $ANCHOR`} />
+          <Stat label="Access needs" value={requirementText(state)} />
           <Stat
             label="Session"
             value={now ? `Ends in ${hoursLeft(state.expiresAt, now)}` : "Active"}

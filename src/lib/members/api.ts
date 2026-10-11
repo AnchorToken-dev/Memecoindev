@@ -5,21 +5,32 @@
  * Env (memecoindev Vercel project):
  *   MEMBERS_SESSION_SECRET  required, 32+ random chars; signs nonces + session cookie.
  *                           Missing -> sign-in shows as "being set up" (fails closed).
- *   ANCHOR_MIN_BALANCE      whole $ANCHOR tokens needed (default DEFAULT_MIN_BALANCE).
+ *   ANCHOR_MIN_BALANCE      whole $ANCHOR tokens needed (default DEFAULT_MIN_BALANCE = 500,000).
+ *   ANCHOR_MIN_USD          optional dollar minimum; tokens = USD / smoothed DexScreener price
+ *                           (see price.server.ts). Falls back to ANCHOR_MIN_BALANCE without a price.
  *   SOLANA_RPC_URL          optional; public mainnet RPC when unset.
  */
 import { createServerFn } from "@tanstack/react-start";
 import type { MembersState } from "./config.ts";
 
 async function serverCtx() {
-  const [{ getRequest, getCookie, setCookie }, core, cfg, bal] = await Promise.all([
+  const [{ getRequest, getCookie, setCookie }, core, cfg, bal, price] = await Promise.all([
     import("@tanstack/react-start/server"),
     import("./core.server.ts"),
     import("./config.ts"),
     import("./balance.server.ts"),
+    import("./price.server.ts"),
   ]);
   const secret = process.env.MEMBERS_SESSION_SECRET?.trim();
-  const minBalance = core.parseMinBalance(process.env.ANCHOR_MIN_BALANCE, cfg.DEFAULT_MIN_BALANCE);
+  const fallbackTokens = core.parseMinBalance(process.env.ANCHOR_MIN_BALANCE, cfg.DEFAULT_MIN_BALANCE);
+  const minUsd = price.parseMinUsd(process.env.ANCHOR_MIN_USD);
+  const requirement = price.resolveRequirement(
+    minUsd,
+    fallbackTokens,
+    minUsd === undefined ? null : await price.getSmoothedPrice(cfg.ANCHOR_MINT),
+  );
+  const minBalance = requirement.tokens;
+  const reqInfo = { minUsd: requirement.minUsd, priceFallback: requirement.priceFallback };
   const rpcUrl = process.env.SOLANA_RPC_URL?.trim() || undefined;
 
   const request = getRequest();
@@ -46,6 +57,7 @@ async function serverCtx() {
     cfg,
     secret: secret && secret.length >= 32 ? secret : undefined,
     minBalance,
+    reqInfo,
     host,
     readBalance: (owner: string) => bal.fetchTokenBalance(owner, cfg.ANCHOR_MINT, rpcUrl),
     sessionCookie: () => getCookie(cfg.SESSION_COOKIE),
@@ -57,14 +69,14 @@ export const getMembersState = createServerFn({ method: "GET" }).handler(
   async (): Promise<MembersState> => {
     const ctx = await serverCtx();
     const { core, cfg, minBalance } = ctx;
-    if (!ctx.secret) return { status: "disabled", minBalance };
+    if (!ctx.secret) return { status: "disabled", minBalance, ...ctx.reqInfo };
 
     const session = core.readToken<import("./core.server.ts").SessionPayload>(
       ctx.secret,
       ctx.sessionCookie(),
       "session",
     );
-    if (!session) return { status: "signed_out", minBalance };
+    if (!session) return { status: "signed_out", minBalance, ...ctx.reqInfo };
 
     let { raw, dec, chk } = { raw: BigInt(session.raw), dec: session.dec, chk: session.chk };
     let recheckFailed = false;
@@ -85,6 +97,7 @@ export const getMembersState = createServerFn({ method: "GET" }).handler(
       return {
         status: "not_holder",
         minBalance,
+        ...ctx.reqInfo,
         address: session.a,
         balance: core.formatTokenAmount(raw, dec),
       };
@@ -93,6 +106,7 @@ export const getMembersState = createServerFn({ method: "GET" }).handler(
     return {
       status: "holder",
       minBalance,
+      ...ctx.reqInfo,
       address: session.a,
       balance: core.formatTokenAmount(raw, dec),
       checkedAt: chk,
@@ -119,7 +133,7 @@ export const completeSignIn = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<MembersState | { status: "error"; error: string }> => {
     const ctx = await serverCtx();
     const { core, minBalance } = ctx;
-    if (!ctx.secret) return { status: "disabled", minBalance };
+    if (!ctx.secret) return { status: "disabled", minBalance, ...ctx.reqInfo };
     const check = core.checkSignIn(ctx.secret, data?.nonceToken, data?.signature, ctx.host);
     if (!check.ok) {
       const error =
@@ -142,6 +156,7 @@ export const completeSignIn = createServerFn({ method: "POST" })
       return {
         status: "not_holder",
         minBalance,
+        ...ctx.reqInfo,
         address: check.nonce.a,
         balance: core.formatTokenAmount(balance.raw, balance.dec),
       };
@@ -151,6 +166,7 @@ export const completeSignIn = createServerFn({ method: "POST" })
     return {
       status: "holder",
       minBalance,
+      ...ctx.reqInfo,
       address: session.a,
       balance: core.formatTokenAmount(balance.raw, balance.dec),
       checkedAt: session.chk,
