@@ -9,17 +9,20 @@
  *   ANCHOR_MIN_USD          optional dollar minimum; tokens = USD / smoothed price (DexScreener, then GeckoTerminal)
  *                           (see price.server.ts). Falls back to ANCHOR_MIN_BALANCE without a price.
  *   SOLANA_RPC_URL          optional; public mainnet RPC when unset.
+ *   OWNER_WALLETS           optional comma-separated owner addresses: skip the balance minimum
+ *                           after a VALID signature (see owners.ts / flow.server.ts).
  */
 import { createServerFn } from "@tanstack/react-start";
 import type { MembersState } from "./config.ts";
 
 async function serverCtx() {
-  const [{ getRequest, getCookie, setCookie }, core, cfg, bal, price] = await Promise.all([
+  const [{ getRequest, getCookie, setCookie }, core, cfg, bal, price, flow] = await Promise.all([
     import("@tanstack/react-start/server"),
     import("./core.server.ts"),
     import("./config.ts"),
     import("./balance.server.ts"),
     import("./price.server.ts"),
+    import("./flow.server.ts"),
   ]);
   const secret = process.env.MEMBERS_SESSION_SECRET?.trim();
   const fallbackTokens = core.parseMinBalance(process.env.ANCHOR_MIN_BALANCE, cfg.DEFAULT_MIN_BALANCE);
@@ -55,6 +58,8 @@ async function serverCtx() {
   return {
     core,
     cfg,
+    flow,
+    owners: process.env.OWNER_WALLETS,
     secret: secret && secret.length >= 32 ? secret : undefined,
     minBalance,
     reqInfo,
@@ -68,50 +73,29 @@ async function serverCtx() {
 export const getMembersState = createServerFn({ method: "GET" }).handler(
   async (): Promise<MembersState> => {
     const ctx = await serverCtx();
-    const { core, cfg, minBalance } = ctx;
+    const { minBalance } = ctx;
     if (!ctx.secret) return { status: "disabled", minBalance, ...ctx.reqInfo };
 
-    const session = core.readToken<import("./core.server.ts").SessionPayload>(
-      ctx.secret,
+    const out = await ctx.flow.decideState(
+      { secret: ctx.secret, host: ctx.host, minBalance, owners: ctx.owners, readBalance: ctx.readBalance },
       ctx.sessionCookie(),
-      "session",
     );
-    if (!session) return { status: "signed_out", minBalance, ...ctx.reqInfo };
-
-    let { raw, dec, chk } = { raw: BigInt(session.raw), dec: session.dec, chk: session.chk };
-    let recheckFailed = false;
-    const now = Date.now();
-    if (now - chk >= cfg.RECHECK_INTERVAL_MS) {
-      try {
-        ({ raw, dec } = await ctx.readBalance(session.a));
-        chk = now;
-      } catch (err) {
-        // Keep the last verified balance until the session expires (max 24h).
-        recheckFailed = true;
-        console.warn("[members] balance recheck failed", (err as Error).message);
-      }
-    }
-
-    if (!core.meetsMinimum(raw, dec, minBalance)) {
+    if (out.kind === "signed_out") return { status: "signed_out", minBalance, ...ctx.reqInfo };
+    if (out.kind === "not_holder") {
       ctx.writeSession(null);
-      return {
-        status: "not_holder",
-        minBalance,
-        ...ctx.reqInfo,
-        address: session.a,
-        balance: core.formatTokenAmount(raw, dec),
-      };
+      return { status: "not_holder", minBalance, ...ctx.reqInfo, address: out.address, balance: out.balance };
     }
-    if (chk !== session.chk) ctx.writeSession({ ...session, chk, raw: raw.toString(), dec });
+    if (out.rewrite) ctx.writeSession(out.rewrite);
     return {
       status: "holder",
       minBalance,
       ...ctx.reqInfo,
-      address: session.a,
-      balance: core.formatTokenAmount(raw, dec),
-      checkedAt: chk,
-      expiresAt: session.exp,
-      recheckFailed: recheckFailed || undefined,
+      address: out.session.a,
+      balance: out.balance,
+      checkedAt: out.session.chk,
+      expiresAt: out.session.exp,
+      recheckFailed: out.recheckFailed || undefined,
+      owner: out.owner || undefined,
     };
   },
 );
@@ -132,45 +116,28 @@ export const completeSignIn = createServerFn({ method: "POST" })
   .validator((data: { nonceToken: string; signature: string }) => data)
   .handler(async ({ data }): Promise<MembersState | { status: "error"; error: string }> => {
     const ctx = await serverCtx();
-    const { core, minBalance } = ctx;
+    const { minBalance } = ctx;
     if (!ctx.secret) return { status: "disabled", minBalance, ...ctx.reqInfo };
-    const check = core.checkSignIn(ctx.secret, data?.nonceToken, data?.signature, ctx.host);
-    if (!check.ok) {
-      const error =
-        check.reason === "bad_nonce"
-          ? "That sign-in request expired. Try again."
-          : check.reason === "wrong_domain"
-            ? "Sign-in was started on a different site address. Try again here."
-            : "The wallet signature didn't check out. Try again.";
-      return { status: "error", error };
-    }
-    let balance: { raw: bigint; dec: number };
-    try {
-      balance = await ctx.readBalance(check.nonce.a);
-    } catch (err) {
-      console.warn("[members] balance check failed", (err as Error).message);
-      return { status: "error", error: "Couldn't read your $ANCHOR balance from Solana right now. Try again in a minute." };
-    }
-    if (!core.meetsMinimum(balance.raw, balance.dec, minBalance)) {
+    const out = await ctx.flow.decideSignIn(
+      { secret: ctx.secret, host: ctx.host, minBalance, owners: ctx.owners, readBalance: ctx.readBalance },
+      data?.nonceToken,
+      data?.signature,
+    );
+    if (out.kind === "error") return { status: "error", error: out.error };
+    if (out.kind === "not_holder") {
       ctx.writeSession(null);
-      return {
-        status: "not_holder",
-        minBalance,
-        ...ctx.reqInfo,
-        address: check.nonce.a,
-        balance: core.formatTokenAmount(balance.raw, balance.dec),
-      };
+      return { status: "not_holder", minBalance, ...ctx.reqInfo, address: out.address, balance: out.balance };
     }
-    const session = core.newSession(check.nonce.a, balance.raw, balance.dec);
-    ctx.writeSession(session);
+    ctx.writeSession(out.session);
     return {
       status: "holder",
       minBalance,
       ...ctx.reqInfo,
-      address: session.a,
-      balance: core.formatTokenAmount(balance.raw, balance.dec),
-      checkedAt: session.chk,
-      expiresAt: session.exp,
+      address: out.session.a,
+      balance: out.balance,
+      checkedAt: out.session.chk,
+      expiresAt: out.session.exp,
+      owner: out.owner || undefined,
     };
   });
 

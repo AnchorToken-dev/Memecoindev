@@ -440,6 +440,14 @@ function Dashboard({ state }: { state: Extract<MembersState, { status: "holder" 
             <Kicker>Access for $ANCHOR holders</Kicker>
             <h1 className="mt-2 font-display text-5xl tracking-wide text-silver">
               Welcome in, {shortAddress(state.address)}
+              {state.owner ? (
+                <span
+                  title="Signed in via the owner allowlist"
+                  className="ml-3 align-middle border border-teal/60 px-2 py-0.5 font-sans text-xs uppercase tracking-wider text-teal"
+                >
+                  Owner
+                </span>
+              ) : null}
             </h1>
             <p className="mt-3 max-w-xl text-muted">
               You're in the members area. This is the early version, so expect more here soon.
