@@ -516,3 +516,83 @@ describe("mobile wallet deep links", () => {
     assert.ok(hasInjectedSolanaWallet({ phantom: { solana: {} } }));
   });
 });
+
+import { decideSignIn, decideState, type FlowCtx } from "./flow.server.ts";
+import { parseOwnerWallets } from "./owners.ts";
+import { RECHECK_INTERVAL_MS } from "./config.ts";
+
+describe("owner allowlist (OWNER_WALLETS)", () => {
+  const host = "memecoindev.vip";
+  const owner = throwawayWallet();
+  const stranger = throwawayWallet();
+  let balanceReads = 0;
+  const ctx: FlowCtx = {
+    secret: SECRET,
+    host,
+    minBalance: 500_000,
+    owners: `junk, ${owner.address},,0OIl`,
+    readBalance: async () => { balanceReads++; return { raw: 0n, dec: 6 }; }, // everyone holds 0 (mock, no network)
+  };
+  const nonceFor = (address: string) => {
+    const n = newNonce(address, host);
+    return { token: signToken(SECRET, n), msg: buildSignInMessage(n) };
+  };
+
+  it("parses only valid base58 pubkeys", () => {
+    assert.deepEqual([...parseOwnerWallets(ctx.owners)], [owner.address]);
+    assert.equal(parseOwnerWallets(undefined).size, 0);
+  });
+
+  it("allowlisted wallet with 0 balance gets in with a valid signature", async () => {
+    const { token, msg } = nonceFor(owner.address);
+    const out = await decideSignIn(ctx, token, owner.signB64(msg));
+    assert.equal(out.kind, "holder");
+    assert.ok(out.kind === "holder" && out.owner && out.session.o === 1 && out.session.raw === "0");
+  });
+
+  it("forged signatures for an allowlisted address are rejected before any allowlist/balance logic", async () => {
+    const { token, msg } = nonceFor(owner.address);
+    const before = balanceReads;
+    for (const sig of [stranger.signB64(msg), randomBytes(64).toString("base64"), "", undefined, "AAAA"]) {
+      const out = await decideSignIn(ctx, token, sig);
+      assert.equal(out.kind, "error");
+    }
+    const other = nonceFor(owner.address); // valid signature over a different nonce
+    assert.equal((await decideSignIn(ctx, token, owner.signB64(other.msg))).kind, "error");
+    // forged nonce token (wrong secret) with a real signature
+    const n = newNonce(owner.address, host);
+    assert.equal((await decideSignIn(ctx, signToken(randomBytes(32).toString("hex"), n), owner.signB64(buildSignInMessage(n)))).kind, "error");
+    assert.equal(balanceReads, before);
+  });
+
+  it("non-listed 0-balance wallet is rejected even with a valid signature", async () => {
+    const { token, msg } = nonceFor(stranger.address);
+    const out = await decideSignIn(ctx, token, stranger.signB64(msg));
+    assert.equal(out.kind, "not_holder");
+  });
+
+  it("owner gets in even if the balance RPC is down; others get a retry error", async () => {
+    const down = { ...ctx, readBalance: async () => { throw new Error("rpc down"); } };
+    const a = nonceFor(owner.address);
+    assert.equal((await decideSignIn(down, a.token, owner.signB64(a.msg))).kind, "holder");
+    const b = nonceFor(stranger.address);
+    assert.equal((await decideSignIn(down, b.token, stranger.signB64(b.msg))).kind, "error");
+  });
+
+  it("hourly recheck honors the allowlist and drops access once removed", async () => {
+    const t0 = Date.now() - 2 * RECHECK_INTERVAL_MS;
+    const cookie = signToken(SECRET, { ...newSession(owner.address, 0n, 6, t0), o: 1 });
+    const ok = await decideState(ctx, cookie);
+    assert.ok(ok.kind === "holder" && ok.owner && ok.rewrite?.o === 1);
+    assert.equal((await decideState({ ...ctx, owners: "" }, cookie)).kind, "not_holder");
+    const s2 = signToken(SECRET, newSession(stranger.address, 0n, 6, t0));
+    assert.equal((await decideState(ctx, s2)).kind, "not_holder");
+    // within the hour an owner cookie needs no network read
+    const fresh = signToken(SECRET, { ...newSession(owner.address, 0n, 6), o: 1 });
+    const before = balanceReads;
+    assert.ok((await decideState(ctx, fresh)).kind === "holder" && balanceReads === before);
+    // a cookie with o:1 but a bad HMAC is rejected
+    const forged = cookie.slice(0, -2) + (cookie.endsWith("A") ? "BB" : "AA");
+    assert.equal((await decideState(ctx, forged)).kind, "signed_out");
+  });
+});

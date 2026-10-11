@@ -24,6 +24,7 @@ export type SessionPayload = {
   chk: number; // last balance check (ms)
   raw: string; // raw token amount at last check
   dec: number; // mint decimals
+  o?: 1; // owner allowlist session (still signature-verified; HMAC-signed)
 };
 
 const b64url = (buf: Buffer) => buf.toString("base64url");

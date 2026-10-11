@@ -41,6 +41,7 @@ export type MembersState = RequirementInfo & (
       checkedAt: number;
       expiresAt: number;
       recheckFailed?: boolean;
+      owner?: boolean;
     }
 );
 
