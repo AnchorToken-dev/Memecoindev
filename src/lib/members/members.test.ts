@@ -25,7 +25,8 @@ function throwawayWallet() {
   const { publicKey, privateKey } = generateKeyPairSync("ed25519");
   const raw = Buffer.from(publicKey.export({ format: "jwk" }).x as string, "base64url");
   const address = base58Encode(raw);
-  const signB64 = (text: string) => sign(null, Buffer.from(text, "utf8"), privateKey).toString("base64");
+  const signB64 = (text: string) =>
+    sign(null, Buffer.from(text, "utf8"), privateKey).toString("base64");
   return { address, signB64 };
 }
 
@@ -63,14 +64,24 @@ describe("sign-in", () => {
     const victim = throwawayWallet();
     const attacker = throwawayWallet();
     const nonce = newNonce(victim.address, host);
-    const res = checkSignIn(SECRET, signToken(SECRET, nonce), attacker.signB64(buildSignInMessage(nonce)), host);
+    const res = checkSignIn(
+      SECRET,
+      signToken(SECRET, nonce),
+      attacker.signB64(buildSignInMessage(nonce)),
+      host,
+    );
     assert.deepEqual(res, { ok: false, reason: "bad_signature" });
   });
 
   it("rejects a signature over different text", () => {
     const w = throwawayWallet();
     const nonce = newNonce(w.address, host);
-    const res = checkSignIn(SECRET, signToken(SECRET, nonce), w.signB64(buildSignInMessage(nonce) + " "), host);
+    const res = checkSignIn(
+      SECRET,
+      signToken(SECRET, nonce),
+      w.signB64(buildSignInMessage(nonce) + " "),
+      host,
+    );
     assert.deepEqual(res, { ok: false, reason: "bad_signature" });
   });
 
@@ -82,7 +93,9 @@ describe("sign-in", () => {
     assert.equal(checkSignIn(SECRET, signToken("x".repeat(64), nonce), sig, host).ok, false);
     // payload swapped to another address, old MAC kept
     const [, mac] = signToken(SECRET, nonce).split(".");
-    const forgedBody = Buffer.from(JSON.stringify({ ...nonce, a: throwawayWallet().address })).toString("base64url");
+    const forgedBody = Buffer.from(
+      JSON.stringify({ ...nonce, a: throwawayWallet().address }),
+    ).toString("base64url");
     assert.equal(checkSignIn(SECRET, `${forgedBody}.${mac}`, sig, host).ok, false);
     // expired
     assert.deepEqual(
@@ -143,7 +156,11 @@ describe("balance logic", () => {
       account: { data: { parsed: { info: { mint, tokenAmount: { amount, decimals } } } } },
     });
     const r = sumTokenAccounts(
-      [acct(ANCHOR_MINT, "60000000000"), acct(ANCHOR_MINT, "40000000000"), acct("So11111111111111111111111111111111111111112", "999999999999")],
+      [
+        acct(ANCHOR_MINT, "60000000000"),
+        acct(ANCHOR_MINT, "40000000000"),
+        acct("So11111111111111111111111111111111111111112", "999999999999"),
+      ],
       ANCHOR_MINT,
     );
     assert.deepEqual(r, { raw: 100_000_000_000n, dec: 6 });
@@ -154,9 +171,16 @@ describe("balance logic", () => {
 
   it("surfaces RPC failures as errors instead of a zero balance", async () => {
     const failing = (async () => new Response("rate limited", { status: 429 })) as typeof fetch;
-    await assert.rejects(fetchTokenBalance(throwawayWallet().address, ANCHOR_MINT, undefined, failing), /429/);
-    const rpcErr = (async () => Response.json({ jsonrpc: "2.0", error: { code: -32005 } })) as typeof fetch;
-    await assert.rejects(fetchTokenBalance(throwawayWallet().address, ANCHOR_MINT, undefined, rpcErr), /-32005/);
+    await assert.rejects(
+      fetchTokenBalance(throwawayWallet().address, ANCHOR_MINT, undefined, failing),
+      /429/,
+    );
+    const rpcErr = (async () =>
+      Response.json({ jsonrpc: "2.0", error: { code: -32005 } })) as typeof fetch;
+    await assert.rejects(
+      fetchTokenBalance(throwawayWallet().address, ANCHOR_MINT, undefined, rpcErr),
+      /-32005/,
+    );
   });
 });
 
@@ -203,7 +227,11 @@ describe("dollar minimum (ANCHOR_MIN_USD)", () => {
       [
         pair({ pairAddress: "small", liquidity: { usd: 500 } }),
         pair({ pairAddress: "big", liquidity: { usd: 9000 } }),
-        pair({ pairAddress: "quote-side", liquidity: { usd: 99999 }, baseToken: { address: "So11111111111111111111111111111111111111112" } }),
+        pair({
+          pairAddress: "quote-side",
+          liquidity: { usd: 99999 },
+          baseToken: { address: "So11111111111111111111111111111111111111112" },
+        }),
         pair({ pairAddress: "other-chain", liquidity: { usd: 99999 }, chainId: "base" }),
         pair({ pairAddress: "no-price", liquidity: { usd: 99999 }, priceUsd: "0" }),
       ],
@@ -224,7 +252,12 @@ describe("dollar minimum (ANCHOR_MIN_USD)", () => {
     const pump = smoothPrice(0.00002, 100);
     assert.ok(Math.abs(pump.priceUsd - 0.00002) < 1e-15);
     // Missing or nonsense change -> current only
-    assert.deepEqual(smoothPrice(0.00003, undefined), { priceUsd: 0.00003, currentUsd: 0.00003, ago24hUsd: null, method: "current_only" });
+    assert.deepEqual(smoothPrice(0.00003, undefined), {
+      priceUsd: 0.00003,
+      currentUsd: 0.00003,
+      ago24hUsd: null,
+      method: "current_only",
+    });
     assert.equal(smoothPrice(0.00003, -100).method, "current_only");
   });
 
@@ -239,10 +272,23 @@ describe("dollar minimum (ANCHOR_MIN_USD)", () => {
   });
 
   it("resolves the requirement with a token fallback when no price", () => {
-    const price = { ...smoothPrice(0.00001, -50), pair: "x", dex: "pumpswap", source: "dexscreener" as const };
+    const price = {
+      ...smoothPrice(0.00001, -50),
+      pair: "x",
+      dex: "pumpswap",
+      source: "dexscreener" as const,
+    };
     assert.deepEqual(resolveRequirement(undefined, 500_000, price), { tokens: 500_000 });
-    assert.deepEqual(resolveRequirement(10, 500_000, price), { tokens: 500_000, minUsd: 10, priceUsd: 0.00002 });
-    assert.deepEqual(resolveRequirement(10, 500_000, null), { tokens: 500_000, minUsd: 10, priceFallback: true });
+    assert.deepEqual(resolveRequirement(10, 500_000, price), {
+      tokens: 500_000,
+      minUsd: 10,
+      priceUsd: 0.00002,
+    });
+    assert.deepEqual(resolveRequirement(10, 500_000, null), {
+      tokens: 500_000,
+      minUsd: 10,
+      priceFallback: true,
+    });
   });
 
   it("fetches DexScreener once per 5 minutes and never throws", async () => {
@@ -250,7 +296,9 @@ describe("dollar minimum (ANCHOR_MIN_USD)", () => {
     let calls = 0;
     const ok = (async () => {
       calls++;
-      return Response.json([pair({ priceUsd: "0.00001", priceChange: { h24: -50 }, liquidity: { usd: 5000 } })]);
+      return Response.json([
+        pair({ priceUsd: "0.00001", priceChange: { h24: -50 }, liquidity: { usd: 5000 } }),
+      ]);
     }) as typeof fetch;
     const t0 = 1_000_000;
     const a = await getSmoothedPrice(ANCHOR_MINT, ok, t0);
@@ -265,14 +313,19 @@ describe("dollar minimum (ANCHOR_MIN_USD)", () => {
     const empty = (async () => Response.json([])) as typeof fetch; // what DexScreener returns for $ANCHOR today
     assert.equal(await getSmoothedPrice(ANCHOR_MINT, empty, t0), null);
     clearPriceCache();
-    const down = (async () => { throw new Error("network down"); }) as typeof fetch;
+    const down = (async () => {
+      throw new Error("network down");
+    }) as typeof fetch;
     assert.equal(await getSmoothedPrice(ANCHOR_MINT, down, t0), null);
     clearPriceCache();
     const http500 = (async () => new Response("x", { status: 500 })) as typeof fetch;
     assert.equal(await getSmoothedPrice(ANCHOR_MINT, http500, t0), null);
     // failures (both sources) are cached for 1 minute, then retried
     let n = 0;
-    const counting = (async () => { n++; return new Response("x", { status: 500 }); }) as typeof fetch;
+    const counting = (async () => {
+      n++;
+      return new Response("x", { status: 500 });
+    }) as typeof fetch;
     clearPriceCache();
     await getSmoothedPrice(ANCHOR_MINT, counting, t0);
     await getSmoothedPrice(ANCHOR_MINT, counting, t0 + 30_000);
@@ -284,23 +337,54 @@ describe("dollar minimum (ANCHOR_MIN_USD)", () => {
 });
 
 describe("GeckoTerminal fallback", () => {
-  const gpool = (id: string, price: string, reserve: string, h24: string | null, base = ANCHOR_MINT) => ({
+  const gpool = (
+    id: string,
+    price: string,
+    reserve: string,
+    h24: string | null,
+    base = ANCHOR_MINT,
+  ) => ({
     id: `solana_${id}`,
     type: "pool",
-    attributes: { address: id, base_token_price_usd: price, reserve_in_usd: reserve, price_change_percentage: { h24 } },
-    relationships: { base_token: { data: { id: `solana_${base}` } }, dex: { data: { id: "pump-fun" } } },
+    attributes: {
+      address: id,
+      base_token_price_usd: price,
+      reserve_in_usd: reserve,
+      price_change_percentage: { h24 },
+    },
+    relationships: {
+      base_token: { data: { id: `solana_${base}` } },
+      dex: { data: { id: "pump-fun" } },
+    },
   });
-  const router = (dex: () => Response | Promise<Response>, gecko: () => Response | Promise<Response>, log: string[] = []) =>
+  const router = (
+    dex: () => Response | Promise<Response>,
+    gecko: () => Response | Promise<Response>,
+    log: string[] = [],
+  ) =>
     (async (input: string | URL | Request) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-      if (url.includes("dexscreener")) { log.push("dex"); return dex(); }
-      if (url.includes("geckoterminal")) { log.push("gecko"); return gecko(); }
+      if (url.includes("dexscreener")) {
+        log.push("dex");
+        return dex();
+      }
+      if (url.includes("geckoterminal")) {
+        log.push("gecko");
+        return gecko();
+      }
       throw new Error("unexpected " + url);
     }) as typeof fetch;
 
   it("picks the highest-reserve pool where $ANCHOR is the base token", () => {
     const best = pickBestGeckoPool(
-      { data: [gpool("small", "0.000003", "100", "0"), gpool("big", "0.000004", "2765.09", "0"), gpool("quote", "0.5", "999999", "0", "So11111111111111111111111111111111111111112"), gpool("zero", "0", "999999", "0")] },
+      {
+        data: [
+          gpool("small", "0.000003", "100", "0"),
+          gpool("big", "0.000004", "2765.09", "0"),
+          gpool("quote", "0.5", "999999", "0", "So11111111111111111111111111111111111111112"),
+          gpool("zero", "0", "999999", "0"),
+        ],
+      },
       ANCHOR_MINT,
     );
     assert.equal(best?.attributes?.address, "big");
@@ -311,7 +395,11 @@ describe("GeckoTerminal fallback", () => {
   it("is used when DexScreener has no pair, with the same smoothing", async () => {
     clearPriceCache();
     const log: string[] = [];
-    const f = router(() => Response.json([]), () => Response.json({ data: [gpool("curve", "0.00001", "2765", "-50")] }), log);
+    const f = router(
+      () => Response.json([]),
+      () => Response.json({ data: [gpool("curve", "0.00001", "2765", "-50")] }),
+      log,
+    );
     const p = await getSmoothedPrice(ANCHOR_MINT, f, 5_000_000);
     assert.deepEqual(log, ["dex", "gecko"]);
     assert.equal(p?.source, "geckoterminal");
@@ -324,13 +412,21 @@ describe("GeckoTerminal fallback", () => {
 
   it("is used when DexScreener errors; string h24 parsed; missing h24 -> current only", async () => {
     clearPriceCache();
-    const f = router(() => { throw new Error("down"); }, () => Response.json({ data: [gpool("curve", "0.000003443424193", "2765", null)] }));
+    const f = router(
+      () => {
+        throw new Error("down");
+      },
+      () => Response.json({ data: [gpool("curve", "0.000003443424193", "2765", null)] }),
+    );
     const p = await getSmoothedPrice(ANCHOR_MINT, f, 6_000_000);
     assert.equal(p?.source, "geckoterminal");
     assert.equal(p?.method, "current_only");
     assert.equal(p?.priceUsd, 0.000003443424193);
     clearPriceCache();
-    const g = router(() => new Response("x", { status: 503 }), () => Response.json({ data: [gpool("curve", "0.00002", "2765", "100")] }));
+    const g = router(
+      () => new Response("x", { status: 503 }),
+      () => Response.json({ data: [gpool("curve", "0.00002", "2765", "100")] }),
+    );
     const q = await getSmoothedPrice(ANCHOR_MINT, g, 6_000_000);
     assert.equal(q?.method, "max_current_24h_ago");
     assert.ok(Math.abs(q!.priceUsd - 0.00002) < 1e-15); // pumped: current is higher
@@ -341,7 +437,18 @@ describe("GeckoTerminal fallback", () => {
     clearPriceCache();
     const log: string[] = [];
     const f = router(
-      () => Response.json([{ chainId: "solana", dexId: "pumpswap", pairAddress: "P", baseToken: { address: ANCHOR_MINT }, priceUsd: "0.00001", liquidity: { usd: 1 }, priceChange: { h24: 0 } }]),
+      () =>
+        Response.json([
+          {
+            chainId: "solana",
+            dexId: "pumpswap",
+            pairAddress: "P",
+            baseToken: { address: ANCHOR_MINT },
+            priceUsd: "0.00001",
+            liquidity: { usd: 1 },
+            priceChange: { h24: 0 },
+          },
+        ]),
       () => Response.json({ data: [gpool("curve", "0.5", "1", "0")] }),
       log,
     );
@@ -353,19 +460,59 @@ describe("GeckoTerminal fallback", () => {
 
   it("falls back to the token minimum when both sources fail (incl. GeckoTerminal 429)", async () => {
     clearPriceCache();
-    const f = router(() => Response.json([]), () => Response.json({ errors: [{ status: "429", title: "Rate limited" }] }, { status: 429 }));
+    const f = router(
+      () => Response.json([]),
+      () => Response.json({ errors: [{ status: "429", title: "Rate limited" }] }, { status: 429 }),
+    );
     const p = await getSmoothedPrice(ANCHOR_MINT, f, 8_000_000);
     assert.equal(p, null);
-    assert.deepEqual(resolveRequirement(5, 500_000, p), { tokens: 500_000, minUsd: 5, priceFallback: true });
+    assert.deepEqual(resolveRequirement(5, 500_000, p), {
+      tokens: 500_000,
+      minUsd: 5,
+      priceFallback: true,
+    });
     clearPriceCache();
   });
 
   it("stays well under ~30 GeckoTerminal calls/min per instance thanks to the cache", async () => {
     clearPriceCache();
     const log: string[] = [];
-    const f = router(() => Response.json([]), () => Response.json({ data: [gpool("curve", "0.000004", "2765", "0")] }), log);
+    const f = router(
+      () => Response.json([]),
+      () => Response.json({ data: [gpool("curve", "0.000004", "2765", "0")] }),
+      log,
+    );
     for (let t = 0; t < 60_000; t += 100) await getSmoothedPrice(ANCHOR_MINT, f, 9_000_000 + t); // 600 page loads in 1 min
     assert.equal(log.filter((x) => x === "gecko").length, 1);
     clearPriceCache();
+  });
+});
+
+import { hasInjectedSolanaWallet, isMobileUserAgent, walletBrowseLinks } from "./mobile-wallets.ts";
+
+describe("mobile wallet deep links", () => {
+  it("builds Phantom/Solflare/Backpack browse links with encoded URL and ref", () => {
+    const [phantom, solflare, backpack] = walletBrowseLinks(
+      "https://memecoindev.vip/members",
+      "https://memecoindev.vip",
+    );
+    assert.equal(
+      phantom.href,
+      "https://phantom.app/ul/browse/https%3A%2F%2Fmemecoindev.vip%2Fmembers?ref=https%3A%2F%2Fmemecoindev.vip",
+    );
+    assert.equal(
+      solflare.href,
+      "https://solflare.com/ul/v1/browse/https%3A%2F%2Fmemecoindev.vip%2Fmembers?ref=https%3A%2F%2Fmemecoindev.vip",
+    );
+    assert.equal(
+      backpack.href,
+      "https://backpack.app/ul/v1/browse/https%3A%2F%2Fmemecoindev.vip%2Fmembers?ref=https%3A%2F%2Fmemecoindev.vip",
+    );
+  });
+  it("detects mobile and injected wallets", () => {
+    assert.ok(isMobileUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)"));
+    assert.equal(isMobileUserAgent("Mozilla/5.0 (X11; Linux x86_64) Chrome/129"), false);
+    assert.equal(hasInjectedSolanaWallet({}), false);
+    assert.ok(hasInjectedSolanaWallet({ phantom: { solana: {} } }));
   });
 });
