@@ -26,6 +26,12 @@ import {
   requestSignInNonce,
   signOutMembers,
 } from "@/lib/members/api";
+import {
+  hasInjectedSolanaWallet,
+  isMobileUserAgent,
+  walletBrowseLinks,
+  type WalletLink,
+} from "@/lib/members/mobile-wallets";
 
 export const Route = createFileRoute("/members")({
   loader: () => getMembersState(),
@@ -35,7 +41,8 @@ export const Route = createFileRoute("/members")({
       { title: "Members · MemecoinDev" },
       {
         name: "description",
-        content: "Members area for $ANCHOR holders: launch watchlist, early access and holder tools.",
+        content:
+          "Members area for $ANCHOR holders: launch watchlist, early access and holder tools.",
       },
     ],
   }),
@@ -43,7 +50,11 @@ export const Route = createFileRoute("/members")({
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 const usd = (n: number) =>
-  n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: n % 1 ? 2 : 0 });
+  n.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: n % 1 ? 2 : 0,
+  });
 
 /** "$5 of $ANCHOR (about 1,162,791 tokens)" or "500,000 $ANCHOR". */
 function requirementText(state: MembersState) {
@@ -63,9 +74,7 @@ function MembersPage() {
 }
 
 function Kicker({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-xs font-semibold tracking-widest text-neon uppercase">{children}</p>
-  );
+  return <p className="text-xs font-semibold tracking-widest text-neon uppercase">{children}</p>;
 }
 
 function SeedPhraseNote() {
@@ -73,19 +82,39 @@ function SeedPhraseNote() {
     <p className="flex items-start gap-2 border border-teal/50 bg-teal/10 px-4 py-3 text-sm text-fg">
       <KeyRound className="mt-0.5 size-4 shrink-0 text-teal" aria-hidden="true" />
       <span>
-        <strong>We'll never ask for your seed phrase or private key.</strong> Signing in is one
-        free message signature. It doesn't move funds or approve a transaction.
+        <strong>We'll never ask for your seed phrase or private key.</strong> Signing in is one free
+        message signature. It doesn't move funds or approve a transaction.
       </span>
     </p>
   );
 }
 
 const inside = [
-  { icon: Eye, title: "Launch watchlist", text: "Coins I'm watching before they launch, posted here first." },
-  { icon: BookOpen, title: "Trade journal", text: "My notes on what worked and what didn't. Coming soon." },
-  { icon: Sparkles, title: "Early access", text: "New tools and Rug Check features before everyone else." },
-  { icon: ShieldCheck, title: "Rug Check", text: "Free A–F risk grades for any Solana or Robinhood chain CA." },
-  { icon: MessagesSquare, title: "Holder Discord", text: "A holders-only channel. The invite shows up here, never in a DM." },
+  {
+    icon: Eye,
+    title: "Launch watchlist",
+    text: "Coins I'm watching before they launch, posted here first.",
+  },
+  {
+    icon: BookOpen,
+    title: "Trade journal",
+    text: "My notes on what worked and what didn't. Coming soon.",
+  },
+  {
+    icon: Sparkles,
+    title: "Early access",
+    text: "New tools and Rug Check features before everyone else.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Rug Check",
+    text: "Free A–F risk grades for any Solana or Robinhood chain CA.",
+  },
+  {
+    icon: MessagesSquare,
+    title: "Holder Discord",
+    text: "A holders-only channel. The invite shows up here, never in a DM.",
+  },
 ];
 
 function Gate({ state }: { state: Exclude<MembersState, { status: "holder" }> }) {
@@ -96,8 +125,8 @@ function Gate({ state }: { state: Exclude<MembersState, { status: "holder" }> })
         <h1 className="mt-2 font-display text-5xl tracking-wide text-silver">Members</h1>
         <p className="mt-3 text-muted">
           A members area for people who hold $ANCHOR. Connect a Solana wallet holding at least{" "}
-          <strong className="text-fg">{requirementText(state)}</strong> and sign one message to
-          get in.
+          <strong className="text-fg">{requirementText(state)}</strong> and sign one message to get
+          in.
         </p>
       </div>
 
@@ -119,7 +148,10 @@ function Gate({ state }: { state: Exclude<MembersState, { status: "holder" }> })
           </ul>
         </section>
 
-        <section className="flex flex-col gap-4 border border-teal/60 bg-surface p-5 sm:p-6" aria-labelledby="signin">
+        <section
+          className="flex flex-col gap-4 border border-teal/60 bg-surface p-5 sm:p-6"
+          aria-labelledby="signin"
+        >
           <h2 id="signin" className="font-display text-2xl tracking-wide text-fg">
             Holder sign-in
           </h2>
@@ -150,14 +182,20 @@ function Gate({ state }: { state: Exclude<MembersState, { status: "holder" }> })
           <PriceNote state={state} />
 
           {state.status === "not_holder" ? (
-            <p className="border border-copper bg-copper/10 px-4 py-3 text-sm text-fg" role="status">
+            <p
+              className="border border-copper bg-copper/10 px-4 py-3 text-sm text-fg"
+              role="status"
+            >
               Wallet {shortAddress(state.address)} holds {state.balance} $ANCHOR. Members access
               needs {requirementText(state)}. You can connect a different wallet below.
             </p>
           ) : null}
 
           {state.status === "disabled" ? (
-            <p className="border border-line bg-surface-2 px-4 py-3 text-sm text-muted" role="status">
+            <p
+              className="border border-line bg-surface-2 px-4 py-3 text-sm text-muted"
+              role="status"
+            >
               Holder sign-in is still being set up. Check back soon.
             </p>
           ) : (
@@ -216,6 +254,22 @@ function WalletSignIn() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [mobileLinks, setMobileLinks] = useState<WalletLink[] | null>(null);
+
+  // Phones without an injected wallet: offer to reopen this page inside a wallet
+  // app's browser. Decide after a short delay, since wallets can register late.
+  useEffect(() => {
+    if (wallets.length > 0) {
+      setMobileLinks(null);
+      return;
+    }
+    const t = setTimeout(() => {
+      if (!isMobileUserAgent(navigator.userAgent, navigator.maxTouchPoints)) return;
+      if (hasInjectedSolanaWallet(window)) return;
+      setMobileLinks(walletBrowseLinks(window.location.href, window.location.origin));
+    }, 600);
+    return () => clearTimeout(t);
+  }, [wallets.length]);
 
   useEffect(() => {
     let off: (() => void) | undefined;
@@ -280,21 +334,71 @@ function WalletSignIn() {
               onClick={() => signIn(w)}
               className="inline-flex min-h-11 items-center gap-2 border border-teal bg-teal px-4 text-sm font-semibold text-bg hover:bg-neon disabled:opacity-60"
             >
-              {w.icon ? <img src={w.icon} alt="" className="size-5" /> : <Wallet className="size-5" aria-hidden="true" />}
+              {w.icon ? (
+                <img src={w.icon} alt="" className="size-5" />
+              ) : (
+                <Wallet className="size-5" aria-hidden="true" />
+              )}
               {busy === w.name ? "Check your wallet…" : `Sign in with ${w.name}`}
             </button>
           ))}
+        </div>
+      ) : mobileLinks ? (
+        <div className="flex flex-col gap-2 text-sm text-muted" data-testid="open-in-wallet">
+          <p>No wallet found in this browser. Open this page in your wallet app to sign in:</p>
+          <a
+            href={mobileLinks[0].href}
+            className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#ab9ff2] px-4 text-sm font-semibold text-[#1c1c33] hover:opacity-90"
+          >
+            <Wallet className="size-5" aria-hidden="true" /> Open in Phantom
+          </a>
+          <div className="flex gap-2">
+            {mobileLinks.slice(1).map((l) => (
+              <a
+                key={l.id}
+                href={l.href}
+                className="inline-flex min-h-10 flex-1 items-center justify-center border border-teal px-3 text-xs font-semibold text-fg hover:border-neon"
+              >
+                Open in {l.name}
+              </a>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="text-sm text-muted">
           <p>
             No Solana wallet found in this browser. Install{" "}
-            <a className="text-teal underline" href="https://phantom.com" target="_blank" rel="noreferrer">Phantom</a>,{" "}
-            <a className="text-teal underline" href="https://solflare.com" target="_blank" rel="noreferrer">Solflare</a> or{" "}
-            <a className="text-teal underline" href="https://backpack.app" target="_blank" rel="noreferrer">Backpack</a>,
-            then refresh.
+            <a
+              className="text-teal underline"
+              href="https://phantom.com"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Phantom
+            </a>
+            ,{" "}
+            <a
+              className="text-teal underline"
+              href="https://solflare.com"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Solflare
+            </a>{" "}
+            or{" "}
+            <a
+              className="text-teal underline"
+              href="https://backpack.app"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Backpack
+            </a>
+            , then refresh.
           </p>
-          <p className="mt-2">On a phone, open memecoindev.vip/members inside your wallet app's browser.</p>
+          <p className="mt-2">
+            On a phone, open memecoindev.vip/members inside your wallet app's browser.
+          </p>
         </div>
       )}
       {notice ? (
@@ -373,17 +477,22 @@ function Dashboard({ state }: { state: Extract<MembersState, { status: "holder" 
           My notes on what worked, what didn't, and why. Lessons, not calls.
         </Card>
         <Card icon={Sparkles} kicker="Early access" title="Try things first">
-          New tools and Rug Check features land here before they go public. You'll see them in
-          this section first.
+          New tools and Rug Check features land here before they go public. You'll see them in this
+          section first.
         </Card>
-        <a href={RUG_CHECK_URL} className="block border border-line bg-surface p-5 hover:border-teal">
+        <a
+          href={RUG_CHECK_URL}
+          className="block border border-line bg-surface p-5 hover:border-teal"
+        >
           <CardHead icon={ShieldCheck} kicker="Free tool" title="Rug Check" />
-          <p className="mt-3 text-muted">Paste a CA, get an A–F risk grade before you trust a coin.</p>
+          <p className="mt-3 text-muted">
+            Paste a CA, get an A–F risk grade before you trust a coin.
+          </p>
           <p className="mt-4 text-sm font-semibold text-teal">rugcheck.memecoindev.vip →</p>
         </a>
         <Card icon={MessagesSquare} kicker="Placeholder" title="Holder Discord">
-          A holders-only channel is on the way. The invite link will appear right here, never in
-          a DM. If someone DMs you an invite, it's not me.
+          A holders-only channel is on the way. The invite link will appear right here, never in a
+          DM. If someone DMs you an invite, it's not me.
         </Card>
       </div>
 
@@ -404,7 +513,15 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
   );
 }
 
-function CardHead({ icon: Icon, kicker, title }: { icon: typeof Eye; kicker: string; title: string }) {
+function CardHead({
+  icon: Icon,
+  kicker,
+  title,
+}: {
+  icon: typeof Eye;
+  kicker: string;
+  title: string;
+}) {
   return (
     <div className="flex items-start gap-3">
       <Icon className="mt-1 size-5 shrink-0 text-teal" aria-hidden="true" />
