@@ -13,7 +13,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
-import { CopyButton } from "@/components/shell";
+import { ContactLine, CopyButton } from "@/components/shell";
 import {
   ANCHOR_MINT,
   ANCHOR_PUMP_URL,
@@ -207,6 +207,10 @@ function Gate({ state }: { state: Exclude<MembersState, { status: "holder" }> })
           )}
 
           <SeedPhraseNote />
+
+          <div className="text-sm text-muted">
+            <ContactLine lead="Can't sign in?" />
+          </div>
 
           <div className="border-t border-line pt-4 text-sm text-muted">
             <p>Official $ANCHOR links. Always check the contract address:</p>
@@ -501,9 +505,8 @@ function Dashboard({ state }: { state: Extract<MembersState, { status: "holder" 
         >
           <CardHead icon={BellRing} kicker="Holder tool" title="Wallet watch alerts" />
           <p className="mt-3 text-muted">
-            Watch coins and dev wallets. Get flagged when a dev dumps, liquidity gets pulled,
-            mint or freeze authority comes back, or the grade drops. In the desk, plus optional
-            Discord.
+            Watch coins and dev wallets. Get flagged when a dev dumps, liquidity gets pulled, mint
+            or freeze authority comes back, or the grade drops. In the desk, plus optional Discord.
           </p>
           <p className="mt-4 text-sm font-semibold text-teal">Open alerts →</p>
         </a>
@@ -542,6 +545,9 @@ function Dashboard({ state }: { state: Extract<MembersState, { status: "holder" 
       <p className="text-sm text-muted">
         Access for holders only. Nothing here is financial advice.
       </p>
+      <div className="text-sm text-muted">
+        <ContactLine />
+      </div>
     </>
   );
 }
