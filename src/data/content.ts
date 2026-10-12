@@ -3,7 +3,7 @@ export const profile = {
   name: "Mark",
   age: 41,
   place: "Georgia, USA",
-  email: "memecoindev42@gmail.com",
+  email: "memecoindev@mail.grokbot.com",
   discord: "https://discord.gg/cx8UTEzv",
   x: [
     { handle: "Draco4226", href: "https://x.com/Draco4226" },
