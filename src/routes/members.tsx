@@ -13,7 +13,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
-import { CopyButton } from "@/components/shell";
+import { ContactLine, CopyButton } from "@/components/shell";
 import {
   ANCHOR_MINT,
   ANCHOR_PUMP_URL,
@@ -207,6 +207,10 @@ function Gate({ state }: { state: Exclude<MembersState, { status: "holder" }> })
           )}
 
           <SeedPhraseNote />
+
+          <div className="text-sm text-muted">
+            <ContactLine lead="Can't sign in?" />
+          </div>
 
           <div className="border-t border-line pt-4 text-sm text-muted">
             <p>Official $ANCHOR links. Always check the contract address:</p>
@@ -542,6 +546,9 @@ function Dashboard({ state }: { state: Extract<MembersState, { status: "holder" 
       <p className="text-sm text-muted">
         Access for holders only. Nothing here is financial advice.
       </p>
+      <div className="text-sm text-muted">
+        <ContactLine />
+      </div>
     </>
   );
 }

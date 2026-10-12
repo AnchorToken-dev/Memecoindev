@@ -64,6 +64,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-5 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>If it is not linked on this site, it is not me.</p>
           <p>X and Discord only. Telegram is a scammer.</p>
+          <ContactLine />
         </div>
       </footer>
     </div>
@@ -232,5 +233,21 @@ export function WalletList({ groups }: { groups: WalletGroup[] }) {
         </section>
       ))}
     </div>
+  );
+}
+
+export const CONTACT_EMAIL = "memecoindev@mail.grokbot.com";
+
+export function ContactLine({ lead = "Having issues?" }: { lead?: string }) {
+  return (
+    <p>
+      {lead} Email{" "}
+      <a
+        className="break-all text-teal underline-offset-2 hover:underline"
+        href={`mailto:${CONTACT_EMAIL}`}
+      >
+        {CONTACT_EMAIL}
+      </a>
+    </p>
   );
 }
