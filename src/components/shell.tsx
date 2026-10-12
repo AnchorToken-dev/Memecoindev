@@ -18,8 +18,12 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-5 py-4">
           <div className="flex items-center justify-between gap-4">
             <Link to="/" className="group flex items-baseline gap-3">
-              <span className="font-display text-2xl tracking-wide text-fg">MEMECOINDEV</span>
-              <span className="hidden text-sm text-muted sm:inline">{profile.name} · Georgia</span>
+              <span className="font-display text-2xl tracking-wide text-fg">
+                MEMECOINDEV
+              </span>
+              <span className="hidden text-sm text-muted sm:inline">
+                {profile.name} · Georgia
+              </span>
             </Link>
             <a
               href={`mailto:${profile.email}`}
@@ -68,7 +72,11 @@ export function Shell({ children }: { children: ReactNode }) {
 }
 
 export function Kicker({ children }: { children: ReactNode }) {
-  return <p className="text-xs font-semibold tracking-widest text-gold uppercase">{children}</p>;
+  return (
+    <p className="text-xs font-semibold tracking-widest text-gold uppercase">
+      {children}
+    </p>
+  );
 }
 
 export function SectionTitle({
@@ -95,12 +103,14 @@ export function TelegramCallout() {
       <div className="flex items-start gap-3">
         <ShieldAlert className="mt-0.5 size-5 shrink-0 text-copper" aria-hidden="true" />
         <div>
-          <h2 className="font-display text-2xl tracking-wide text-fg">Telegram is not me</h2>
+          <h2 className="font-display text-2xl tracking-wide text-fg">
+            Telegram is not me
+          </h2>
           <p className="mt-2 text-muted">
-            I am moving completely off Telegram. Scammers impersonate projects there, and Telegram
-            has refused to help protect the groups. Anyone claiming to be me on Telegram is a
-            scammer. I talk on X and Discord. Check this site or those accounts before you trust a
-            message.
+            I am moving completely off Telegram. Scammers impersonate projects
+            there, and Telegram has refused to help protect the groups. Anyone
+            claiming to be me on Telegram is a scammer. I talk on X and Discord.
+            Check this site or those accounts before you trust a message.
           </p>
         </div>
       </div>
@@ -108,7 +118,13 @@ export function TelegramCallout() {
   );
 }
 
-export function CopyButton({ value, label = "Copy" }: { value: string; label?: string }) {
+export function CopyButton({
+  value,
+  label = "Copy",
+}: {
+  value: string;
+  label?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   return (
@@ -135,7 +151,13 @@ export function CopyButton({ value, label = "Copy" }: { value: string; label?: s
   );
 }
 
-export function OutLink({ href, children }: { href: string; children: ReactNode }) {
+export function OutLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) {
   return (
     <a
       href={href}

@@ -505,8 +505,9 @@ function Dashboard({ state }: { state: Extract<MembersState, { status: "holder" 
         >
           <CardHead icon={BellRing} kicker="Holder tool" title="Wallet watch alerts" />
           <p className="mt-3 text-muted">
-            Watch coins and dev wallets. Get flagged when a dev dumps, liquidity gets pulled, mint
-            or freeze authority comes back, or the grade drops. In the desk, plus optional Discord.
+            Watch coins and dev wallets. Get flagged when a dev dumps, liquidity gets pulled,
+            mint or freeze authority comes back, or the grade drops. In the desk, plus optional
+            Discord.
           </p>
           <p className="mt-4 text-sm font-semibold text-teal">Open alerts →</p>
         </a>
