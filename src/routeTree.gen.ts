@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GekkoRouteImport } from './routes/gekko'
 import { Route as MembersRouteImport } from './routes/members'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PumpRouteImport } from './routes/pump'
+import { Route as TermsRouteImport } from './routes/terms'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,9 +31,19 @@ const MembersRoute = MembersRouteImport.update({
   path: '/members',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PumpRoute = PumpRouteImport.update({
   id: '/pump',
   path: '/pump',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -39,34 +51,42 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/gekko': typeof GekkoRoute
   '/members': typeof MembersRoute
+  '/privacy': typeof PrivacyRoute
   '/pump': typeof PumpRoute
+  '/terms': typeof TermsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/gekko': typeof GekkoRoute
   '/members': typeof MembersRoute
+  '/privacy': typeof PrivacyRoute
   '/pump': typeof PumpRoute
+  '/terms': typeof TermsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/gekko': typeof GekkoRoute
   '/members': typeof MembersRoute
+  '/privacy': typeof PrivacyRoute
   '/pump': typeof PumpRoute
+  '/terms': typeof TermsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/gekko' | '/members' | '/pump'
+  fullPaths: '/' | '/gekko' | '/members' | '/privacy' | '/pump' | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/gekko' | '/members' | '/pump'
-  id: '__root__' | '/' | '/gekko' | '/members' | '/pump'
+  to: '/' | '/gekko' | '/members' | '/privacy' | '/pump' | '/terms'
+  id: '__root__' | '/' | '/gekko' | '/members' | '/privacy' | '/pump' | '/terms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GekkoRoute: typeof GekkoRoute
   MembersRoute: typeof MembersRoute
+  PrivacyRoute: typeof PrivacyRoute
   PumpRoute: typeof PumpRoute
+  TermsRoute: typeof TermsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,11 +112,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MembersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pump': {
       id: '/pump'
       path: '/pump'
       fullPath: '/pump'
       preLoaderRoute: typeof PumpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -106,7 +140,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GekkoRoute: GekkoRoute,
   MembersRoute: MembersRoute,
+  PrivacyRoute: PrivacyRoute,
   PumpRoute: PumpRoute,
+  TermsRoute: TermsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
