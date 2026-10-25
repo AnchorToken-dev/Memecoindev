@@ -60,7 +60,7 @@ const usd = (n: number) =>
     maximumFractionDigits: n % 1 ? 2 : 0,
   });
 
-/** "$5 of $ANCHOR (about 1,162,791 tokens)" or "500,000 $ANCHOR". */
+/** "$5 of $ANCHOR (about 1,162,791 tokens)" or "5,000 $ANCHOR". */
 function requirementText(state: MembersState) {
   if (state.minUsd !== undefined && !state.priceFallback) {
     return `${usd(state.minUsd)} of $ANCHOR (about ${fmt(state.minBalance)} tokens)`;
