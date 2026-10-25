@@ -61,26 +61,10 @@ export function Shell({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-10">{children}</main>
       <footer className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-5 py-8 text-sm text-muted">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p>If it is not linked on this site, it is not me.</p>
-            <p>X and Discord only. Telegram is a scammer.</p>
-            <ContactLine />
-          </div>
-          <nav aria-label="Legal" className="flex flex-wrap gap-x-4">
-            <Link
-              to="/terms"
-              className="inline-flex min-h-11 items-center font-semibold text-fg hover:text-gold"
-            >
-              Terms of Use
-            </Link>
-            <Link
-              to="/privacy"
-              className="inline-flex min-h-11 items-center font-semibold text-fg hover:text-gold"
-            >
-              Privacy Policy
-            </Link>
-          </nav>
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-5 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+          <p>If it is not linked on this site, it is not me.</p>
+          <p>X and Discord only. Telegram is a scammer.</p>
+          <ContactLine />
         </div>
       </footer>
     </div>
