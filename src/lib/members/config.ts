@@ -4,8 +4,8 @@ export const ANCHOR_PUMP_URL = `https://pump.fun/${ANCHOR_MINT}`;
 export const ANCHOR_SITE_URL = "https://anchortoken.vip";
 export const RUG_CHECK_URL = "https://rugcheck.memecoindev.vip";
 
-/** Placeholder until Mark picks the real number (env ANCHOR_MIN_BALANCE overrides). */
-export const DEFAULT_MIN_BALANCE = 500_000;
+/** Whole $ANCHOR tokens required when ANCHOR_MIN_BALANCE is unset. */
+export const DEFAULT_MIN_BALANCE = 5_000;
 
 /** Signed-in session length. */
 export const SESSION_TTL_MS = 24 * 60 * 60 * 1000;

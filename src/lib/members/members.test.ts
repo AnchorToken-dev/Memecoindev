@@ -209,8 +209,8 @@ describe("dollar minimum (ANCHOR_MIN_USD)", () => {
     ...over,
   });
 
-  it("default token minimum is 500,000", () => {
-    assert.equal(DEFAULT_MIN_BALANCE, 500_000);
+  it("default token minimum is 5,000", () => {
+    assert.equal(DEFAULT_MIN_BALANCE, 5_000);
   });
 
   it("parses ANCHOR_MIN_USD", () => {

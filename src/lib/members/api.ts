@@ -5,7 +5,7 @@
  * Env (memecoindev Vercel project):
  *   MEMBERS_SESSION_SECRET  required, 32+ random chars; signs nonces + session cookie.
  *                           Missing -> sign-in shows as "being set up" (fails closed).
- *   ANCHOR_MIN_BALANCE      whole $ANCHOR tokens needed (default DEFAULT_MIN_BALANCE = 500,000).
+ *   ANCHOR_MIN_BALANCE      whole $ANCHOR tokens needed (default DEFAULT_MIN_BALANCE = 5,000).
  *   ANCHOR_MIN_USD          optional dollar minimum; tokens = USD / smoothed price (DexScreener, then GeckoTerminal)
  *                           (see price.server.ts). Falls back to ANCHOR_MIN_BALANCE without a price.
  *   SOLANA_RPC_URL          optional; public mainnet RPC when unset.
